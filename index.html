@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Will you be my Valentine?</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="images/img1.jpeg">
+<link rel="preload" as="image" href="images/img2.jpeg">
+<link rel="preload" as="image" href="images/img3.jpeg">
+<style>
+    :root{
+        --bg:#fff0f6;
+        --accent:#ff5d8f;
+        --accent-2:#ff8ab8;
+        --muted:#ffdfe9;
+        --card:#fff;
+        --text:#4a1124;
+        --glass: rgba(255,255,255,0.6);
+        --shadow: 0 10px 30px rgba(74,17,36,0.12);
+        --heart-size: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background: radial-gradient(1200px 600px at 10% 10%, #fff6fb 0%, transparent 10%), var(--bg); color:var(--text); -webkit-font-smoothing:antialiased}
+    .stage{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:40px}
+    .card{width:min(980px,96%);background:rgba(45,45,45,0.1); border-radius:18px; padding:40px; box-shadow:var(--shadow); backdrop-filter: blur(6px); position:relative; overflow:visible; z-index:1}
+    .hero{display:flex;gap:30px;align-items:center;flex-wrap:wrap;justify-content:center}
+    .left{flex:1 1 380px;min-width:280px;text-align:center}
+    h1{font-size:clamp(28px,6vw,52px);margin:0 0 18px;line-height:1.05;color:var(--accent-2); text-shadow:0 6px 18px rgba(255,90,140,0.12)}
+    .sub{font-size:16px;color:#7a3a57;margin-bottom:22px}
+    .buttons{position:relative;height:120px;display:flex;align-items:center;justify-content:center;gap:20px;z-index:2}
+    .btn{cursor:pointer;border:0;padding:14px 22px;border-radius:999px;font-weight:700;font-size:18px;box-shadow:0 8px 18px rgba(255,125,165,0.18);transition:transform .24s ease, box-shadow .24s ease, background .24s ease;display:inline-flex;align-items:center;gap:10px}
+    .btn:active{transform:translateY(2px)}
+    .yes{background:linear-gradient(120deg,var(--accent),var(--accent-2)); color:white}
+    .no{background:linear-gradient(120deg,#ffe9ee,#ffd6e6); color:#a12b47; position:absolute; padding:18px 28px; font-size:20px; transition:transform .45s cubic-bezier(.2,.9,.25,1), left .5s cubic-bezier(.2,.9,.25,1), top .5s cubic-bezier(.2,.9,.25,1); box-shadow:0 10px 24px rgba(255,140,170,0.14); z-index:3}
+    .no .label{pointer-events:none}
+    /* ensure no is not focusable */
+    .no[aria-disabled="true"]{pointer-events:auto} /* we'll handle clicks in JS */
+
+    /* Photo collage */
+    .collage{flex:1 1 420px;min-width:260px;position:relative;height:480px;padding:20px}
+    .photo{position:absolute;width:140px;aspect-ratio:4/3;object-fit:cover;border-radius:12px;box-shadow: 0 8px 24px rgba(74,17,36,0.16);transition:transform .3s ease, z-index .3s ease, box-shadow .3s ease;border:5px solid rgba(255,255,255,0.9);z-index:1}
+    .photo:hover{transform:scale(1.08) !important;z-index:10;box-shadow: 0 16px 36px rgba(74,17,36,0.24)}
+    .photo:nth-child(1){width:220px;left:8%;top:12%;transform:rotate(-8deg)}
+    .photo:nth-child(2){width:190px;right:15%;top:8%;transform:rotate(6deg)}
+    .photo:nth-child(3){width:210px;left:35%;bottom:20%;transform:rotate(-5deg)}
+
+    /* floating hearts background */
+    .bg-hearts{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+    .bg-hearts .h{position:absolute;opacity:.12;color:#ff7899;font-size:var(--heart-size); filter: drop-shadow(0 6px 12px rgba(255,90,140,0.08))}
+    @keyframes floatUp {
+        0%{transform:translateY(20px) scale(.9);opacity:0}
+        10%{opacity:1}
+        100%{transform:translateY(-110vh) scale(1.05); opacity:0}
+    }
+
+    /* celebratory hearts/confetti */
+    .confetti-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+    .conf{position:absolute;font-size:20px;opacity:0;transform:translateY(0) rotate(0); animation:popUp 1600ms ease-out forwards}
+    @keyframes popUp{
+        0%{opacity:0; transform:translateY(8px) scale(.85) rotate(-10deg)}
+        15%{opacity:1; transform:translateY(0) scale(1) rotate(0)}
+        100%{transform:translateY(-110vh) rotate(600deg); opacity:0}
+    }
+
+    /* message overlay */
+    .overlay{position:fixed;inset:0;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,240,250,0.02)); display:flex;align-items:center;justify-content:center;backdrop-filter: blur(6px); z-index:40}
+    .modal{background:linear-gradient(180deg,#fff,#fff7fb); border-radius:18px;padding:28px 32px; box-shadow:0 20px 60px rgba(74,17,36,0.18); text-align:center; max-width:520px}
+    .modal h2{margin:0;color:var(--accent-2);font-size:clamp(20px,4vw,30px);font-weight:700;line-height:1.3;letter-spacing:-0.3px;font-family:'Playfair Display',Georgia,serif}
+    .modal p{margin:12px 0 0;color:#6f2e4a;font-size:15px;line-height:1.6;letter-spacing:0.2px;font-weight:500;font-family:'Lora',Georgia,serif}
+
+    /* toast notification */
+    .toast-message{
+        position:fixed;background:linear-gradient(120deg,var(--accent),var(--accent-2)); color:white;padding:12px 20px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 20px rgba(255,93,143,0.25); z-index:35;pointer-events:none;animation:toastFloat 2.5s ease-out forwards
+    }
+
+    /* modal buttons and inputs */
+    .modal-btn{cursor:pointer;background:linear-gradient(120deg,var(--accent),var(--accent-2));color:white;border:none;padding:12px 28px;border-radius:999px;font-weight:700;font-size:16px;margin-top:20px;transition:transform .24s ease, box-shadow .24s ease;box-shadow:0 8px 18px rgba(255,125,165,0.18)}
+    .modal-btn:hover{transform:scale(1.05)}
+    .modal-btn:active{transform:scale(0.98)}
+    .birthday-input{width:100%;padding:12px 16px;border:2px solid var(--accent-2);border-radius:8px;font-size:16px;font-family:inherit;margin-top:16px;transition:border-color .2s ease;box-sizing:border-box}
+    .birthday-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,90,140,0.1)}
+    .valentine-input{width:100%;padding:12px 16px;border:2px solid var(--accent-2);border-radius:8px;font-size:15px;font-family:inherit;margin-top:16px;min-height:100px;resize:vertical;transition:border-color .2s ease;box-sizing:border-box}
+    .valentine-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,90,140,0.1)}
+    
+    /* preloader */
+    .preloader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:9999;opacity:1;transition:opacity .6s ease-out;pointer-events:none}
+    .preloader.hidden{opacity:0;pointer-events:none}
+    .preloader-content{text-align:center}
+    .preloader-spinner{width:60px;height:60px;border:4px solid rgba(255,90,140,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+    .preloader-text{color:var(--accent-2);font-size:16px;font-weight:600;letter-spacing:1px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    
+    @keyframes toastFloat{
+        0%{opacity:0; transform:translateY(20px) scale(.85)}
+        10%{opacity:1}
+        90%{opacity:1}
+        100%{opacity:0; transform:translateY(-120px) scale(.95)}
+    }
+
+        @media (max-width:800px){
+        .hero{flex-direction:column-reverse; gap:20px}
+        .left{flex:1 1 300px}
+        .buttons{height:180px; gap:15px}
+        .btn{padding:14px 20px; font-size:18px}
+        .no{padding:16px 24px; font-size:18px}
+        .card{padding:30px 20px}
+        .collage{flex:1 1 320px;height:480px;padding:12px}
+        .photo{width:110px !important}
+        .photo:nth-child(1){width:160px !important;left:10% !important;top:10% !important}
+        .photo:nth-child(2){width:140px !important;right:15% !important;top:8% !important}
+        .photo:nth-child(3){width:150px !important;left:30% !important;bottom:20% !important}
+    }
+
+</style>
+</head>
+<body>
+    <!-- preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-content">
+            <div class="preloader-spinner"></div>
+            <div class="preloader-text">Loading my love please be patient... 💖</div>
+        </div>
+    </div>
+
+    <div class="stage" id="stage">
+        <div class="bg-hearts" id="bgHearts" aria-hidden="true"></div>
+        <div class="confetti-wrap" id="confetti" aria-hidden="true"></div>
+
+        <div class="card" role="main" aria-labelledby="mainQ">
+            <div class="hero">
+                <div class="left">
+                    <h1 id="mainQ">WILL YOU BE MY VALENTINE OR WIN $1000? <span aria-hidden="true">💖</span></h1>
+                    <div class="buttons" id="buttons">
+                        <button class="btn yes" id="yesBtn">YES <span aria-hidden="true">💕</span></button>
+                        <button class="btn no" id="noBtn" aria-disabled="true" tabindex="-1" aria-label="No button, try to catch it">NO <span class="label" aria-hidden="true">💸</span></button>
+                    </div>
+                </div>
+
+                <div class="collage" aria-hidden="false" aria-label="Photo collage">
+                    <img class="photo" src="images/img1.jpeg" alt="Sweet memory 1">
+                    <img class="photo" src="images/img2.jpeg" alt="Sweet memory 2">
+                    <img class="photo" src="images/img3.jpeg" alt="Sweet memory 3">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- greeting modal -->
+    <template id="greetingModalT">
+        <div class="overlay" id="greetingOverlay">
+            <div class="modal">
+                <h2>Hey, Tinomudaishe it's me Tavonga 💖</h2>
+                <p>I just wanted you to know how much you mean to me. I decided to do something a little goofy, but also something special, because you deserve that and more. I hope this makes you smile and feel how important you are to me. Please enjoy</p>
+                <button id="greetingNextBtn" class="modal-btn">Next</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- birthday modal -->
+    <template id="birthdayModalT">
+        <div class="overlay" id="birthdayOverlay">
+            <div class="modal">
+                <h2>One more thing... 💕</h2>
+                <p id="birthdayMsg">What's my birthday? (DD-MM-YYYY)</p>
+                <input type="text" id="birthdayInput" placeholder="DD-MM-YYYY" class="birthday-input">
+                <button id="birthdaySubmitBtn" class="modal-btn">Submit</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- result modal template -->
+    <template id="modalT">
+        <div class="overlay" id="overlay">
+            <div class="modal">
+                <h2>I was already yours… now it just feels official ❤️</h2>
+                <p>Thank you for saying YES — I love you more than words can say.</p>
+                <p style="margin-top:28px;font-weight:600;color:var(--accent-2)">What do you want for Valentine's Day? 💝</p>
+                <textarea id="valentineWishInput" placeholder="Tell me what you'd like..." class="valentine-input"></textarea>
+                <button id="whatsappBtn" class="modal-btn">Send to WhatsApp</button>
+            </div>
+        </div>
+    </template>
+
+<script>
+(function(){
+    // Hide preloader when page loads
+    window.addEventListener('load', ()=>{
+        const preloader = document.getElementById('preloader');
+        if(preloader) {
+            setTimeout(()=>{
+                preloader.classList.add('hidden');
+            }, 500);
+        }
+    });
+
+    const stage = document.getElementById('stage');
+    const card = document.querySelector('.card');
+    const noBtn = document.getElementById('noBtn');
+    const yesBtn = document.getElementById('yesBtn');
+    const bgHearts = document.getElementById('bgHearts');
+    const confettiWrap = document.getElementById('confetti');
+    const modalTpl = document.getElementById('modalT').content;
+    const greetingModalTpl = document.getElementById('greetingModalT').content;
+    const birthdayModalTpl = document.getElementById('birthdayModalT').content;
+    const correctBirthday = '16-02-1999';
+    let birthdayVerified = false;
+
+    // Show greeting modal on page load
+    function showGreetingModal(){
+        const modal = greetingModalTpl.cloneNode(true);
+        document.body.appendChild(modal);
+        const nextBtn = document.getElementById('greetingNextBtn');
+        const overlay = document.getElementById('greetingOverlay');
+        nextBtn.addEventListener('click', ()=>{
+            overlay.remove();
+            showBirthdayModal();
+        });
+    }
+
+    // Show birthday modal
+    function showBirthdayModal(){
+        const modal = birthdayModalTpl.cloneNode(true);
+        document.body.appendChild(modal);
+        const submitBtn = document.getElementById('birthdaySubmitBtn');
+        const input = document.getElementById('birthdayInput');
+        const overlay = document.getElementById('birthdayOverlay');
+        const msg = document.getElementById('birthdayMsg');
+
+        // Auto-format input to DD-MM-YYYY with only numbers
+        input.addEventListener('input', (e)=>{
+            let value = e.target.value.replace(/\D/g, ''); // remove non-digits
+            
+            // Limit to 8 digits
+            if(value.length > 8) value = value.slice(0, 8);
+            
+            // Auto-insert dashes
+            let formatted = '';
+            if(value.length > 0) formatted = value.slice(0, 2);
+            if(value.length > 2) formatted += '-' + value.slice(2, 4);
+            if(value.length > 4) formatted += '-' + value.slice(4, 8);
+            
+            input.value = formatted;
+        });
+
+        submitBtn.addEventListener('click', validateBirthday);
+        input.addEventListener('keypress', (e)=>{
+            if(e.key === 'Enter') validateBirthday();
+        });
+
+        function validateBirthday(){
+            const value = input.value.trim();
+            if(value === correctBirthday){
+                birthdayVerified = true;
+                overlay.remove();
+            } else {
+                msg.textContent = 'Oops, that\'s not quite right. Try again! 💕';
+                msg.style.color = '#d94e5c';
+                input.value = '';
+                input.focus();
+                setTimeout(()=>{
+                    msg.textContent = 'What\'s my birthday? (DD-MM-YYYY)';
+                    msg.style.color = '#6f2e4a';
+                }, 2000);
+            }
+        }
+
+        input.focus();
+    }
+
+    // Show greeting modal when page loads
+    window.addEventListener('load', ()=>{
+        showGreetingModal();
+    });
+    const messages = [
+        "Hey… at least give me a chance 🥺❤️",
+        "No is temporarily unavailable 😌",
+        "Are you suuuure? 👀💕",
+        "That button is shy… try again 😏",
+        "Hmm… I think you meant YES 😘",
+        "Keep trying… you're getting warmer 🔥😂",
+        "Error 404: NO not found 💖",
+        "Wow, you're persistent 😄 but I like that",
+        "If you keep trying, it might actually work… or not 😌",
+        "Plot twist: NO doesn't exist 😎❤️",
+        "Patience… love takes time 💕",
+        "Almost there… just kidding 😂",
+        "Why run from destiny? 😍",
+        "This button believes in love too 💘",
+        "At this point… it's fate 💕"
+    ];
+
+    // create background floating hearts
+    function spawnBgHearts(count=18){
+        const colors = ['#ffd3e6','#ffb3d1','#ff8ab8','#ffc0db'];
+        for(let i=0;i<count;i++){
+            const s = document.createElement('div');
+            s.className='h';
+            s.textContent='❤';
+            const size = 10 + Math.random()*30;
+            s.style.fontSize = size+'px';
+            s.style.left = Math.random()*100 + '%';
+            s.style.bottom = (-10 - Math.random()*20) + '%';
+            s.style.opacity = 0.06 + Math.random()*0.12;
+            s.style.animation = `floatUp ${8+Math.random()*10}s linear ${-Math.random()*10}s infinite`;
+            s.style.color = colors[Math.floor(Math.random()*colors.length)];
+            s.style.transform = `translateY(${Math.random()*10}px)`;
+            bgHearts.appendChild(s);
+        }
+    }
+    spawnBgHearts();
+
+    // Show random playful message
+    function showToastMessage(){
+        const msg = messages[Math.floor(Math.random()*messages.length)];
+        const toast = document.createElement('div');
+        toast.className='toast-message';
+        toast.textContent=msg;
+        const buttonsContainer = document.getElementById('buttons');
+        const buttonsRect = buttonsContainer.getBoundingClientRect();
+        toast.style.left = (buttonsRect.left + buttonsRect.width/2 - 80) + 'px';
+        toast.style.top = (buttonsRect.top - 80) + 'px';
+        document.body.appendChild(toast);
+        setTimeout(()=>toast.remove(), 2500);
+    }
+
+    // NO button behavior
+    let moving = false;
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    function moveNoButton() {
+        if (moving) return;
+        moving = true;
+        showToastMessage();
+        const cardRect = card.getBoundingClientRect();
+        const btn = noBtn;
+        const btnRect = btn.getBoundingClientRect();
+        const margin = 20; // increased margin for safety
+        
+        // constrain to card bounds (viewport coordinates) with strict margins
+        const cardLeft = cardRect.left + margin;
+        const cardTop = cardRect.top + margin;
+        const cardRight = cardRect.right - margin;
+        const cardBottom = cardRect.bottom - margin;
+        
+        const btnWidth = btnRect.width;
+        const btnHeight = btnRect.height;
+        
+        // ensure we have valid bounds
+        if (cardRight - cardLeft < btnWidth || cardBottom - cardTop < btnHeight) {
+            moving = false;
+            return;
+        }
+        
+        // new position constrained strictly within card with margins
+        const minX = cardLeft;
+        const maxX = cardRight - btnWidth;
+        const minY = cardTop;
+        const maxY = cardBottom - btnHeight;
+        
+        const nx = Math.random() * (maxX - minX) + minX;
+        const ny = Math.random() * (maxY - minY) + minY;
+        
+        // set using fixed positioning (viewport coordinates)
+        btn.style.position = 'fixed';
+        btn.style.left = nx + 'px';
+        btn.style.top = ny + 'px';
+        btn.style.transform = 'translate(0,0)';
+        btn.style.transition = 'transform .5s cubic-bezier(.2,.9,.25,1), left .5s cubic-bezier(.2,.9,.25,1), top .5s cubic-bezier(.2,.9,.25,1)';
+        
+        // Verify button stays in bounds and clamp if needed
+        setTimeout(()=>{ 
+            const finalRect = btn.getBoundingClientRect();
+            let needsCorrection = false;
+            let correctedX = parseFloat(btn.style.left);
+            let correctedY = parseFloat(btn.style.top);
+            
+            if (finalRect.left < cardRect.left + margin) { correctedX = cardRect.left + margin; needsCorrection = true; }
+            if (finalRect.right > cardRect.right - margin) { correctedX = cardRect.right - margin - btnWidth; needsCorrection = true; }
+            if (finalRect.top < cardRect.top + margin) { correctedY = cardRect.top + margin; needsCorrection = true; }
+            if (finalRect.bottom > cardRect.bottom - margin) { correctedY = cardRect.bottom - margin - btnHeight; needsCorrection = true; }
+            
+            if (needsCorrection) {
+                btn.style.transition = 'none';
+                btn.style.left = correctedX + 'px';
+                btn.style.top = correctedY + 'px';
+            }
+            moving = false; 
+        }, 520);
+    }
+
+    // initial placement (below YES button, within buttons container)
+    function placeInitialNo(){
+        const buttonsContainer = document.getElementById('buttons');
+        const yesRect = yesBtn.getBoundingClientRect();
+        const buttonsRect = buttonsContainer.getBoundingClientRect();
+        const btnRect = noBtn.getBoundingClientRect();
+        // position below YES button relative to buttons container
+        const x = (yesRect.left - buttonsRect.left) + (yesRect.width / 2) - (btnRect.width / 2);
+        const y = (yesRect.bottom - buttonsRect.top) + 20;
+        noBtn.style.position = 'absolute';
+        noBtn.style.left = x + 'px';
+        noBtn.style.top = y + 'px';
+        noBtn.style.transform = 'translate(0,0)';
+    }
+    // run after layout
+    placeInitialNo();
+    window.addEventListener('resize', ()=>{ placeInitialNo(); });
+
+    // proximity detection on mouse move
+    const threshold = window.innerWidth < 800 ? 100 : 120;
+    document.addEventListener('mousemove', (e)=>{
+        const b = noBtn.getBoundingClientRect();
+        const cx = b.left + b.width/2;
+        const cy = b.top + b.height/2;
+        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+        if(dist < threshold) moveNoButton();
+    });
+
+    // also respond to mouseenter directly on the button (some browsers)
+    noBtn.addEventListener('mouseenter', moveNoButton);
+
+    // touch devices: move when touchstart near
+    document.addEventListener('touchstart', (e)=>{
+        const t = e.touches[0];
+        if(!t) return;
+        const b = noBtn.getBoundingClientRect();
+        const cx = b.left + b.width/2;
+        const cy = b.top + b.height/2;
+        const dist = Math.hypot(t.clientX - cx, t.clientY - cy);
+        if(dist < threshold + 40) moveNoButton();
+    }, {passive:true});
+
+    // prevent clicking the NO button by keyboard or other means
+    noBtn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        ev.stopPropagation();
+        moveNoButton();
+    });
+
+    noBtn.addEventListener('focus', ()=>{ noBtn.blur(); moveNoButton(); });
+
+    // YES button click: show modal message and confetti hearts
+    yesBtn.addEventListener('click', ()=>{
+        // create overlay
+        const modal = modalTpl.cloneNode(true);
+        document.body.appendChild(modal);
+        // spawn confetti hearts
+        spawnConfetti(28);
+        // small pulsing effect on yes
+        yesBtn.animate([{transform:'scale(1)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],{duration:700,iterations:1});
+        // remove modal on click anywhere (but not on buttons)
+        const overlay = document.getElementById('overlay');
+        const whatsappBtn = document.getElementById('whatsappBtn');
+        const wishInput = document.getElementById('valentineWishInput');
+        
+        overlay.addEventListener('click', (e)=>{
+            if(e.target === overlay) overlay.remove();
+        });
+        
+        // WhatsApp button functionality
+        whatsappBtn.addEventListener('click', ()=>{
+            const message = wishInput.value.trim();
+            if(!message){
+                wishInput.style.borderColor = '#d94e5c';
+                setTimeout(()=>{ wishInput.style.borderColor = 'var(--accent-2)'; }, 1500);
+                return;
+            }
+            const fullMessage = `Hey Tavonga! 💖\n\nFor Valentine's Day, I would like:\n${message}`;
+            const encodedMessage = encodeURIComponent(fullMessage);
+            const whatsappUrl = `https://wa.me/263777961750?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        });
+    });
+
+    function spawnConfetti(n=20){
+        for(let i=0;i<n;i++){
+            const el = document.createElement('div');
+            el.className='conf';
+            el.textContent = ['💖','💕','💘','💝'][Math.floor(Math.random()*4)];
+            const size = Math.random()*18 + 12;
+            el.style.fontSize = size+'px';
+            el.style.left = (20 + Math.random()*60) + '%';
+            el.style.bottom = '-10%';
+            el.style.opacity = 0;
+            // stagger durations & delay
+            el.style.animationDuration = (1400 + Math.random()*1200) + 'ms';
+            el.style.animationDelay = (Math.random()*200) + 'ms';
+            confettiWrap.appendChild(el);
+            // cleanup
+            setTimeout(()=> el.remove(), 3200);
+        }
+    }
+
+    // ensure the no button stays within card bounds if window resized or layout changes
+    const ro = new ResizeObserver(()=> {
+        const b = noBtn.getBoundingClientRect();
+        const c = card.getBoundingClientRect();
+        let changed=false;
+        const margin = 8;
+        if(b.left < c.left + margin) { noBtn.style.left = (c.left + margin) + 'px'; changed=true; }
+        if(b.right > c.right - margin) { noBtn.style.left = (c.right - b.width - margin) + 'px'; changed=true; }
+        if(b.top < c.top + margin) { noBtn.style.top = (c.top + margin) + 'px'; changed=true; }
+        if(b.bottom > c.bottom - margin) { noBtn.style.top = (c.bottom - b.height - margin) + 'px'; changed=true; }
+        if(changed) setTimeout(()=>{},200);
+    });
+    ro.observe(card);
+
+})();
+</script>
+</body>
+</html>
